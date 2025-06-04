@@ -7,4 +7,10 @@ use Illuminate\Http\Request;
 
 class AttendanceRecords extends Controller
 {
+	public function index(Request $request) {
+		$query = AttendanceRecords::query();
+
+		
+
+	} 
 }
