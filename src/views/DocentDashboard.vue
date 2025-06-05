@@ -60,6 +60,10 @@
             </select>
           </label>
         </div>
+        <button class="filter-btn details-btn" @click="goToStudentDetails">
+          <span class="btn-icon">👤</span>
+          Student Details
+        </button>
         <button class="filter-btn" @click="applyFilters">Filteren</button>
         <button class="reset-btn" @click="resetFilters">Reset</button>
       </section>
@@ -196,6 +200,7 @@
 </template>
 
 <script>
+import WeekOverviewAllStudents from './WeekOverviewAllStudents.vue'
 export default {
   name: "Home",
   data() {
@@ -226,25 +231,103 @@ export default {
         "Groep A", "Groep B", "Groep C", "Groep D"
       ],
       
-      allStudents: [
-        { nr: "1234", name: "Sara", attendance: 83, group: "Groep A" },
-        { nr: "12345", name: "Saam", attendance: 72, group: "Groep A" },
-        { nr: "3134", name: "Boo", attendance: 30, group: "Groep B" },
-        { nr: "9374", name: "Laan", attendance: 90, group: "Groep B" },
-        { nr: "8903", name: "Saar", attendance: 43, group: "Groep C" },
-        { nr: "92021", name: "Lana", attendance: 92, group: "Groep C" },
-        { nr: "5678", name: "Tom", attendance: 78, group: "Groep A" },
-        { nr: "7890", name: "Emma", attendance: 95, group: "Groep D" },
-        { nr: "1111", name: "Max", attendance: 45, group: "Groep D" },
-        { nr: "2222", name: "Lisa", attendance: 88, group: "Groep B" },
+      // Base student data zonder attendance percentages
+      baseStudents: [
+        { nr: "1234", name: "Sara", group: "Groep A" },
+        { nr: "12345", name: "Saam", group: "Groep A" },
+        { nr: "3134", name: "Boo", group: "Groep B" },
+        { nr: "9374", name: "Laan", group: "Groep B" },
+        { nr: "8903", name: "Saar", group: "Groep C" },
+        { nr: "92021", name: "Lana", group: "Groep C" },
+        { nr: "5678", name: "Tom", group: "Groep A" },
+        { nr: "7890", name: "Emma", group: "Groep D" },
+        { nr: "1111", name: "Max", group: "Groep D" },
+        { nr: "2222", name: "Lisa", group: "Groep B" },
       ],
       
+      // Attendance data per week
+      weeklyAttendance: {
+        "Week 8": {
+          "1234": 75,    // Sara
+          "12345": 60,   // Saam
+          "3134": 45,    // Boo
+          "9374": 88,    // Laan
+          "8903": 32,    // Saar
+          "92021": 95,   // Lana
+          "5678": 70,    // Tom
+          "7890": 92,    // Emma
+          "1111": 38,    // Max
+          "2222": 85     // Lisa
+        },
+        "Week 9": {
+          "1234": 80,    // Sara
+          "12345": 65,   // Saam
+          "3134": 35,    // Boo
+          "9374": 92,    // Laan
+          "8903": 48,    // Saar
+          "92021": 88,   // Lana
+          "5678": 75,    // Tom
+          "7890": 96,    // Emma
+          "1111": 42,    // Max
+          "2222": 90     // Lisa
+        },
+        "Week 10": {
+          "1234": 83,    // Sara
+          "12345": 72,   // Saam
+          "3134": 30,    // Boo
+          "9374": 90,    // Laan
+          "8903": 43,    // Saar
+          "92021": 92,   // Lana
+          "5678": 78,    // Tom
+          "7890": 95,    // Emma
+          "1111": 45,    // Max
+          "2222": 88     // Lisa
+        },
+        "Week 11": {
+          "1234": 87,    // Sara
+          "12345": 78,   // Saam
+          "3134": 28,    // Boo
+          "9374": 94,    // Laan
+          "8903": 52,    // Saar
+          "92021": 89,   // Lana
+          "5678": 82,    // Tom
+          "7890": 98,    // Emma
+          "1111": 48,    // Max
+          "2222": 91     // Lisa
+        },
+        "Week 12": {
+          "1234": 90,    // Sara
+          "12345": 85,   // Saam
+          "3134": 25,    // Boo
+          "9374": 96,    // Laan
+          "8903": 55,    // Saar
+          "92021": 85,   // Lana
+          "5678": 88,    // Tom
+          "7890": 100,   // Emma
+          "1111": 52,    // Max
+          "2222": 94     // Lisa
+        },
+        "Week 13": {
+          "1234": 92,    // Sara
+          "12345": 88,   // Saam
+          "3134": 22,    // Boo
+          "9374": 98,    // Laan
+          "8903": 58,    // Saar
+          "92021": 82,   // Lana
+          "5678": 92,    // Tom
+          "7890": 97,    // Emma
+          "1111": 55,    // Max
+          "2222": 96     // Lisa
+        }
+      },
+      
+      allStudents: [],
       filteredStudents: []
     };
   },
   
   mounted() {
-    this.filteredStudents = [...this.allStudents];
+    this.updateStudentsForWeek();
     this.applyFilters();
     
     // Simulate browser navigation
@@ -323,9 +406,18 @@ export default {
   },
   
   methods: {
+    updateStudentsForWeek() {
+      const weekData = this.weeklyAttendance[this.selectedWeek];
+      this.allStudents = this.baseStudents.map(student => ({
+        ...student,
+        attendance: weekData[student.nr] || 0
+      }));
+    },
+    
     selectWeek(week) {
       this.selectedWeek = week;
       this.showWeekPicker = false;
+      this.updateStudentsForWeek(); // Update attendance data voor de nieuwe week
       this.applyFilters();
     },
     
@@ -349,7 +441,26 @@ export default {
       this.selectedWeek = "Week 10";
       this.selectedGroup = "Alle";
       this.selectedStudent = "Alle studenten";
+      this.updateStudentsForWeek(); // Update attendance data
       this.applyFilters();
+    },
+    
+    // Aangepaste methode voor Student Details navigatie via Vue Router
+    goToStudentDetails() {
+      let studentData = null;
+      if (this.selectedStudent !== "Alle studenten") {
+        studentData = this.allStudents.find(s => s.nr === this.selectedStudent);
+      } else if (this.filteredStudents.length > 0) {
+        studentData = this.filteredStudents[0];
+      } else {
+        studentData = this.allStudents[0] || { nr: "1234", name: "Sara", group: "Groep A" };
+      }
+
+      // Navigeer naar de student details pagina via router!
+      this.$router.push({
+        name: 'StudentDetails',
+        params: { studentId: studentData.nr }
+      });
     },
     
     sortBy(field) {
