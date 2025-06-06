@@ -1,6 +1,7 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-
+    margin: 0;
+    padding: 0;
 }
 
 .container {
@@ -9,17 +10,6 @@ body {
     padding: 20px;
     min-height: 100vh;
 }
-
-.header {
-    background-color: #e0e0e0;
-    padding: 15px;
-    text-align: center;
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    border: 2px solid #999;
-}
-
 
 .browser-header {
     display: flex;
@@ -31,29 +21,6 @@ body {
     gap: 12px;
     height: 48px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.browser-controls {
-    display: flex;
-    gap: 4px;
-}
-
-.browser-controls button {
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-}
-
-.browser-controls button:hover {
-    background: #e2e8f0;
 }
 
 .browser-title {
@@ -70,14 +37,7 @@ body {
     border: 1px solid #cbd5e1;
     border-radius: 50%;
     margin-left: 14%;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-image: url('pad/naar/afbeelding.jpg');
-}
-
-.header {
-    display: none;
+    background: #f1f5f9;
 }
 
 .student-info {
@@ -100,35 +60,39 @@ body {
     flex-direction: column;
 }
 
-.student-field label {
-    font-size: 12px;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-    margin-bottom: 4px;
-}
-
-.student-field input {
-    border: 1px solid #cbd5e1;
-    padding: 6px 12px;
-    font-size: 14px;
-    background: #ffffff;
-    width: 120px;
-    height: 32px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.student-field input:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
 .controls {
     display: flex;
     gap: 10px;
     margin-bottom: 16px;
     align-items: center;
+    flex-wrap: wrap;
+}
+
+.period-selector {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.period-input {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.period-input label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.period-input select {
+    border: 1px solid #cbd5e1;
+    padding: 6px 12px;
+    font-size: 14px;
+    background: #ffffff;
+    height: 32px;
+    min-width: 80px;
 }
 
 .btn {
@@ -147,41 +111,17 @@ body {
     background: #2563eb;
 }
 
-/* DROPDOWN - Het uitklapbare week menu */
-.dropdown {
-    position: relative;
+.btn-secondary {
+    border: 1px solid #64748b;
+    background: #64748b;
+    color: white;
 }
 
-.dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: white;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1;
-    min-width: 100px;
+.btn-secondary:hover {
+    background: #475569;
+    border-color: #475569;
 }
 
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-
-.dropdown-item {
-    padding: 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #e2e8f0;
-    font-size: 14px;
-}
-
-.dropdown-item:hover {
-    background-color: #f8fafc;
-}
-
-.dropdown-item:last-child {
-    border-bottom: none;
-}
-
-/* SUMMARY CARDS - De 3 kaartjes: Gemiddelde, Beste week, Slechtste week */
 .summary-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -236,7 +176,7 @@ body {
 }
 
 .value.perfect {
-    color: #059669;
+    color: #047857;
 }
 
 .value.excellent {
@@ -260,15 +200,11 @@ body {
 }
 
 .value.geen-aanwezigheid {
-    color: #dc2626;
+    color: #7f1d1d;
 }
 
 .value.good {
     color: #059669;
-}
-
-.value.bad {
-    color: #dc2626;
 }
 
 .weeks-section {
@@ -278,6 +214,7 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     margin-top: 7%;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .weeks-title {
@@ -324,13 +261,15 @@ body {
 }
 
 .week-percentage.perfect {
-    color: #059669;
+    color: #047857;
     background: #d1fae5;
+    border: 1px solid #10b981;
 }
 
 .week-percentage.excellent {
     color: #059669;
     background: #d1fae5;
+    border: 1px solid #10b981;
 }
 
 .week-percentage.goed {
@@ -354,23 +293,105 @@ body {
 }
 
 .week-percentage.geen-aanwezigheid {
-    color: #dc2626;
-    background: #fee2e2;
+    color: #7f1d1d;
+    background: #fecaca;
+    border: 1px solid #dc2626;
 }
 
-.week-percentage.good {
-    color: #059669;
-    background: #d1fae5;
+.chart-container {
+    display: none;
+    padding: 20px;
+    gap: 20px;
+    flex-direction: column;
 }
 
-.week-percentage.warning {
-    color: #d97706;
-    background: #fef3c7;
+.chart-container.show {
+    display: flex;
 }
 
-.week-percentage.poor {
-    color: #dc2626;
-    background: #fee2e2;
+.back-button-container {
+    margin-bottom: 20px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+.line-chart {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    height: 300px;
+}
+
+.circle-chart {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    position: relative;
+    margin: 20px 0;
+    background: conic-gradient(#3b82f6 0deg 0deg, #e5e7eb 0deg 360deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 1.5s ease-in-out;
+}
+
+.circle::before {
+    content: '';
+    width: 100px;
+    height: 100px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+}
+
+.percentage-text {
+    position: relative;
+    z-index: 1;
+    font-size: 24px;
+    font-weight: bold;
+    color: #1e293b;
+    transition: color 0.8s ease-in-out;
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #1e293b;
+}
+
+.svg-chart {
+    width: 100%;
+    height: 250px;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+.svg-chart.show {
+    opacity: 1;
+}
+
+.hidden {
+    display: none;
 }
 
 @media (max-width: 768px) {
@@ -389,10 +410,6 @@ body {
         gap: 12px;
     }
 
-    .student-field input {
-        width: 100%;
-    }
-
     .summary-cards {
         grid-template-columns: 1fr;
     }
@@ -405,5 +422,20 @@ body {
 
     .week-card {
         padding: 15px;
+    }
+
+    .chart-container {
+        flex-direction: column;
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .period-selector {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
     }
 }
