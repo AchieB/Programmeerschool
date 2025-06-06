@@ -1,4 +1,3 @@
-/* IMPORT PAGE STYLING - COMPLETE FRONTEND */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
@@ -10,7 +9,6 @@ body {
     min-height: 100vh;
 }
 
-/* BROWSER HEADER - Same style as student page */
 .browser-header {
     display: flex;
     align-items: center;
@@ -31,7 +29,6 @@ body {
     color: #1e293b;
 }
 
-/* MAIN SECTIONS */
 .section {
     margin: 0 0 16px 0;
     background: #ffffff;
@@ -52,7 +49,6 @@ body {
     padding: 20px;
 }
 
-/* UPLOAD SECTION */
 .upload-area {
     border: 2px dashed #e2e8f0;
     padding: 40px;
@@ -93,7 +89,6 @@ body {
     line-height: 1.5;
 }
 
-/* BUTTONS */
 .btn {
     border: 1px solid #3b82f6;
     background: #3b82f6;
@@ -128,7 +123,6 @@ body {
     background: #4b5563;
 }
 
-/* FILE VALIDATION SECTION */
 .validation-info {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -167,7 +161,6 @@ body {
     color: #374151;
 }
 
-/* Validation states */
 .validation-item.validation-loading {
     background: #fef3c7;
 }
@@ -184,7 +177,7 @@ body {
     background: #fef3c7;
 }
 
-/* FILE INFO */
+
 .file-info {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -451,7 +444,6 @@ body {
     white-space: nowrap;
 }
 
-/* STATUS BADGES */
 .status-succesvol {
     color: #059669;
     background: #d1fae5;
@@ -479,7 +471,6 @@ body {
     font-weight: 600;
 }
 
-/* SMALL BUTTONS */
 .btn-small {
     background: none;
     border: 1px solid #d1d5db;
@@ -500,7 +491,6 @@ body {
     border-color: #ef4444;
 }
 
-/* BROWSER FOOTER */
 .browser-footer {
     height: 12px;
     background: #f1f5f9;
@@ -509,7 +499,6 @@ body {
     margin-top: 16px;
 }
 
-/* LOADING SPINNER */
 .loading-indicator {
     display: none;
     align-items: center;
@@ -538,7 +527,6 @@ body {
     }
 }
 
-/* RESPONSIVE DESIGN */
 @media (max-width: 768px) {
     .container {
         padding: 8px;
@@ -580,19 +568,16 @@ body {
     }
 }
 
-/* HIDDEN INPUT */
 #fileInput {
     display: none;
 }
 
-/* DRAG AND DROP VISUAL FEEDBACK */
 .upload-area.drag-active {
     border-color: #10b981;
     background: #ecfdf5;
     border-style: solid;
 }
 
-/* HOVER EFFECTS */
 .section {
     transition: box-shadow 0.2s;
 }
@@ -601,13 +586,11 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* FILE TYPE ICONS */
 .file-type-icon {
     margin-right: 8px;
     font-size: 16px;
 }
 
-/* EMPTY STATE */
 .no-data {
     text-align: center;
     color: #64748b;
