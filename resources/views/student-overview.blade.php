@@ -2,10 +2,13 @@
 <html lang="nl">
 
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Student overzicht</title>
-	<link href="{{ asset('css/student-overview.css') }}" rel="stylesheet">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student overzicht</title>
+    <link href="{{ asset('css/student-overview.css') }}" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 </head>
 
 <body>
@@ -15,82 +18,98 @@
 			<div class="browser-profile"></div>
 		</div>
 
-		<!-- Student info section -->
-		<div class="student-info">
-			<!-- Will be populated by JavaScript -->
-		</div>
 
-		<!-- Summary cards -->
-		<div class="summary-cards">
-			<div class="summary-card">
-				<h3>GEMIDDELDE</h3>
-				<div class="value" id="average">--%</div>
-			</div>
-			<div class="summary-card">
-				<h3>STATUS</h3>
-				<div class="value" id="status">--</div>
-			</div>
-			<div class="summary-card">
-				<h3>BESTE WEEK</h3>
-				<div class="value" id="best-week">Week --</div>
-			</div>
-			<div class="summary-card">
-				<h3>SLECHTSTE WEEK</h3>
-				<div class="value" id="worst-week">Week --</div>
-			</div>
-		</div>
+        <div class="student-info">
+            <div class="student-field">Student Naam: Laden...</div>
+            <div class="student-field">Student nr: Laden...</div>
+            <div class="student-field">Student Klas: Laden...</div>
+        </div>
 
-		<!-- Controls section -->
-		<div class="controls">
-			<div class="period-selector">
-				<div class="period-input">
-					<label>Van Week:</label>
-					<select id="start-week">
-						@for ($i = 1; $i <= 52; $i++)
-							<option value="{{ $i }}" {{ $i == 1 ? 'selected' : '' }}>Week {{ $i }}</option>
-						@endfor
-					</select>
-				</div>
-				<div class="period-input">
-					<label>Tot Week:</label>
-					<select id="end-week">
-						@for ($i = 1; $i <= 52; $i++)
-							<option value="{{ $i }}" {{ $i == 52 ? 'selected' : '' }}>Week {{ $i }}</option>
-						@endfor
-					</select>
-				</div>
-			</div>
-			<button id="filter-btn" class="btn">Filteren</button>
-		</div>
+        <div class="controls">
+            <div class="period-selector">
+                <div class="period-input">
+                    <label for="jaar">Jaar:</label>
+                    <select id="jaar">
+                        <option value="2023">2023</option>
+                        <option value="2024" selected>2024</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </div>
+                <div class="period-input">
+                    <label for="start-week">Van Week:</label>
+                    <select id="start-week">
+                        <option value="1">Week 1</option>
+                    </select>
+                </div>
 
-		<!-- Weeks grid section - Dit is de grafiek die je mist! -->
-		<div class="weeks-section" id="weeks-section">
-			<div class="weeks-grid" id="weeks-grid"></div>
-		</div>
+                <div class="period-input">
+                    <label for="end-week">Tot Week:</label>
+                    <select id="end-week">
+                        <option value="12">Week 12</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn" id="filter-btn">Filteren</button>
+            <button class="btn" id="download-btn">Download overzicht</button>
+        </div>
 
-		<!-- Script sectie -->
-		<script>
-			// Define API endpoints for JavaScript to use
-			window.studentDataUrl = "{{ $apiEndpoints['studentData'] }}";
-			window.weeklyDataUrl = "{{ $apiEndpoints['weeklyData'] }}";
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Gemiddelde</h3>
+                <div class="value" id="average">Laden...</div>
+            </div>
+            <div class="summary-card">
+                <h3>Status</h3>
+                <div class="value" id="status">Laden...</div>
+            </div>
+            <div class="summary-card success">
+                <h3>Beste week</h3>
+                <div class="value" id="best-week">Laden...</div>
+            </div>
+            <div class="summary-card danger">
+                <h3>Slechtste week</h3>
+                <div class="value" id="worst-week">Laden...</div>
+            </div>
+        </div>
 
-			// Pass student number to JavaScript if available
-			@if($studentnummer)
-				window.studentnummer = "{{ $studentnummer }}";
-			@endif
+        <div class="weeks-section" id="weeks-section">
+            <div class="weeks-title">Afgelopen weken</div>
+            <div class="weeks-grid" id="weeks-grid">
+                <div style="text-align: center; color: #64748b; padding: 40px;">
+                    <div class="spinner" style="margin: 0 auto 16px;"></div>
+                    <div>Gegevens laden...</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-			// Initial student data from server (if available)
-			@if($student)
-				window.initialStudentData = {
-					name: "{{ $student->naam }}",
-					number: "{{ $student->studentnummer }}",
-					class: "{{ $student->klas }}"
-				};
-			@endif
-		</script>
+    <div class="weeks-section">
+        <div class="chart-container" id="chart-container">
+            <div class="back-button-container">
+                <button class="btn btn-secondary" id="back-btn">← Terug naar overzicht</button>
+            </div>
 
-		<script src="{{ asset('js/student-overview.js') }}"></script>
-	</div>
+            <div class="charts-grid">
+                <div class="line-chart">
+                    <div class="chart-title">Aanwezigheid per week</div>
+                    <svg class="svg-chart" id="line-chart">
+                    </svg>
+                </div>
+                <div class="circle-chart">
+                    <div class="chart-title">Gemiddelde aanwezigheid</div>
+                    <div class="circle" id="attendance-circle">
+                        <span class="percentage-text" id="circle-percentage">0%</span>
+                    </div>
+                    <div style="font-size: 14px; color: #64748b;">Alle weken</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ asset('js/student-overview.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+
 </body>
 
 </html>
