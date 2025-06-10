@@ -1,0 +1,154 @@
+.filter-panel {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-panel > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+}
+
+.filter-panel label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.input-compact {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.input-compact:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.year-selector {
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.year-selector option {
+  background: white;
+  color: #333;
+}
+
+/* Week option styling */
+.week-2024 {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.week-2025-early {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.week-regular {
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+.year-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #1a0e3e 0%, #1a0e3e  100%);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #1565c0;
+  border-left: 3px solid #2196f3;
+  font-weight: 500;
+}
+
+.info-icon {
+  font-size: 1rem;
+}
+
+.info-text {
+  font-weight: 500;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.filter-btn:hover {
+  background: #0056b3;
+}
+
+.details-btn {
+  background: #28a745;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.details-btn:hover {
+  background: #1e7e34;
+}
+
+.btn-icon {
+  font-size: 1rem;
+}
+
+.reset-btn {
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    border-color: rgba(156, 163, 175, 0.3);
+}
+
+
+.reset-btn:hover {
+  background: #545b62;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+ .filter-panel {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    display: flex;
+    gap: 20px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+  
+  .filter-panel > div {
+    min-width: auto;
+  }
+  
+  .year-info {
+    order: -1;
+    margin-bottom: 0.5rem;
+  }
+}
