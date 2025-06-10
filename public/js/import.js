@@ -1,7 +1,9 @@
 
 let selectedFile = null;
 
+
 // Laravel URLs (set by Blade template)
+
 const uploadUrl = window.uploadUrl || 'api/import/upload';
 const historyUrl = window.historyUrl || 'api/import/logs';
 
@@ -153,100 +155,88 @@ function getFileExtension(filename) {
 }
 
 
-async function uploadFile() {
-	if (!selectedFile) {
-		showStatus('Selecteer eerst een bestand.', 'error');
-		return;
-	}
+    if (!selectedFile) {
+        showStatus('Selecteer eerst een bestand.', 'error');
+        return;
+    }
 
-	try {
-		console.log('Starting upload for:', selectedFile.name);
-		console.log('Upload URL:', uploadUrl);  // Debug: controleer welke URL wordt gebruikt
+    try {
+        console.log('Starting upload for:', selectedFile.name);
+        console.log('Upload URL:', uploadUrl);
 
-		// Log file details
-		console.log('File being uploaded:', {
-			name: selectedFile.name,
-			type: selectedFile.type,
-			size: selectedFile.size,
-			lastModified: new Date(selectedFile.lastModified)
-		});
+        console.log('File being uploaded:', {
+            name: selectedFile.name,
+            type: selectedFile.type,
+            size: selectedFile.size,
+            lastModified: new Date(selectedFile.lastModified)
+        });
 
-		// Start upload process
-		showUploadProgress(true);
-		setUploadProgress(0);
-		showStatus('Bestand wordt geüpload...', 'success');
+        showUploadProgress(true);
+        setUploadProgress(0);
+        showStatus('Bestand wordt geüpload...', 'success');
 
-		// Disable upload button during upload
-		const uploadBtn = document.getElementById('uploadBtn');
-		uploadBtn.disabled = true;
-		uploadBtn.textContent = 'Uploading...';
+        const uploadBtn = document.getElementById('uploadBtn');
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading...';
 
-		// Create form data
-		const formData = new FormData();
-		formData.append('aar_file', selectedFile);
-		formData.append('_token', getCSRFToken());
+        const formData = new FormData();
+        formData.append('aar_file', selectedFile);
+        formData.append('_token', getCSRFToken());
 
-		// Add parsed AAR information
-		const aarInfo = parseAARFilename(selectedFile.name);
-		if (aarInfo.valid) {
-			formData.append('detected_year', aarInfo.year);
-			formData.append('detected_week', aarInfo.week);
-			formData.append('detected_code', aarInfo.code);
-		}
+        const aarInfo = parseAARFilename(selectedFile.name);
+        if (aarInfo.valid) {
+            formData.append('detected_year', aarInfo.year);
+            formData.append('detected_week', aarInfo.week);
+            formData.append('detected_code', aarInfo.code);
+        }
 
-		// Simulate progress
-		simulateProgress();
+        simulateProgress();
 
-		// Send to Laravel backend
-		const response = await fetch(uploadUrl, {
-			method: 'POST',
-			body: formData,
-			headers: {
-				'X-Requested-With': 'XMLHttpRequest'
-			}
-		});
+        const response = await fetch(uploadUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
 
-		const result = await response.json();
-		console.log('Upload result:', result);
+        const result = await response.json();
+        console.log('Upload result:', result);
 
-		if (response.ok && result.success) {
-			// Upload successful
-			const message = result.message || `Bestand "${selectedFile.name}" is succesvol geïmporteerd`;
-			const recordCount = result.records_imported || 0;
+        if (response.ok && result.success) {
+            const message = result.message || `Bestand "${selectedFile.name}" is succesvol geïmporteerd`;
+            const recordCount = result.records_imported || 0;
 
-			showStatus(`${message} (${recordCount} records geïmporteerd)`, 'success');
-			addToHistory(selectedFile.name, 'Succesvol', recordCount);
-			clearFileSelection();
+            showStatus(`${message} (${recordCount} records geïmporteerd)`, 'success');
+            addToHistory(selectedFile.name, 'Succesvol', recordCount);
+            clearFileSelection();
 
-			// Refresh history table
-			setTimeout(loadImportHistory, 1000);
-		} else {
-			// Upload failed
-			const errorMessage = result.message || result.error || 'Er is een fout opgetreden tijdens het uploaden.';
-			showStatus(`Upload gefaald: ${errorMessage}`, 'error');
-			addToHistory(selectedFile.name, 'Gefaald', 0, errorMessage);
-		}
+            setTimeout(loadImportHistory, 1000);
+        } else {
+            const errorMessage = result.message || result.error || 'Er is een fout opgetreden tijdens het uploaden.';
+            showStatus(`Upload gefaald: ${errorMessage}`, 'error');
+            addToHistory(selectedFile.name, 'Gefaald', 0, errorMessage);
+        }
 
-	} catch (error) {
-		console.error('Upload error:', error);
+    } catch (error) {
+        console.error('Upload error:', error);
 
-		// Handle different types of errors
-		if (error.name === 'TypeError' && error.message.includes('fetch')) {
-			showStatus('Kan geen verbinding maken met server. Backend nog niet gereed?', 'error');
-		} else {
-			showStatus(`Upload gefaald: ${error.message}`, 'error');
-		}
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            showStatus('Kan geen verbinding maken met server. Backend nog niet gereed?', 'error');
+        } else {
+            showStatus(`Upload gefaald: ${error.message}`, 'error');
+        }
 
-		addToHistory(selectedFile.name, 'Gefaald', 0, error.message);
-	} finally {
-		// Reset upload state
-		showUploadProgress(false);
-		setUploadProgress(0);
+        addToHistory(selectedFile.name, 'Gefaald', 0, error.message);
+    } finally {
+        showUploadProgress(false);
+        setUploadProgress(0);
 
-		const uploadBtn = document.getElementById('uploadBtn');
-		uploadBtn.textContent = 'Upload Bestand';
-		uploadBtn.disabled = selectedFile === null;
-	}
+        const uploadBtn = document.getElementById('uploadBtn');
+        uploadBtn.textContent = 'Upload Bestand';
+        uploadBtn.disabled = selectedFile === null;
+    }
+
 }
 
 function showUploadProgress(show) {
@@ -342,29 +332,29 @@ function addToHistory(filename, status, recordsImported = 0, errorMessage = '') 
 }
 
 async function loadImportHistory() {
-	try {
-		const response = await fetch(window.historyUrl);
 
-		if (!response.ok) {
-			throw new Error('Failed to load import history');
-		}
+    try {
+        const response = await fetch(window.historyUrl);
 
-		const history = await response.json();
-		updateHistoryTable(history);
-	} catch (error) {
-		console.error('Error loading import history:', error);
-		// Optional: show a user-friendly error message
-	}
+        if (!response.ok) {
+            throw new Error('Failed to load import history');
+        }
+
+        const history = await response.json();
+        updateHistoryTable(history);
+    } catch (error) {
+        console.error('Error loading import history:', error);
+    }
 }
 
-// Update this function to match the field names from your API
 function updateHistoryTable(history) {
-	const tableBody = document.getElementById('historyTableBody');
+    const tableBody = document.getElementById('historyTableBody');
 
-	if (!tableBody) {
-		console.error('History table body not found');
-		return;
-	}
+    if (!tableBody) {
+        console.error('History table body not found');
+        return;
+    }
+
 
 	if (history.length === 0) {
 		tableBody.innerHTML = `
@@ -376,6 +366,7 @@ function updateHistoryTable(history) {
         `;
 		return;
 	}
+
 
 	let html = '';
 
