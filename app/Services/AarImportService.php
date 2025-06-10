@@ -31,16 +31,50 @@ class AarImportService
 
             // Parse bestandsnaam voor week en jaar info
             $fileInfo = $this->parseFileName($originalFileName);
+
+						//Laad spreadsheet met reader op basis van extensie
+						$extension = pathinfo($filePath, PATHINFO_EXTENSION);
+						$reader = null;
+
+						switch (strtolower($extension)) {
+							case 'xlsx':
+								$reader = IOFactory::createReader('Xlsx');
+								break;
+							case 'ods': // Fix: was 'ods;'
+								$reader = IOFactory::createReader('Ods');
+								break;
+							default: // Fix: was 'default;'
+								throw new Exception("Niet ondersteund bestandstype: $extension");
+						}
+
+						//fouten worden opgevangen bij het lezen van de bestanden
+						try {
+								$reader->setReadDataOnly(true);
+								$spreadsheet = $reader->load($filePath);
+						}	catch (\PhpOffice\PhpSpreadsheet\Reader\Exception $e) {
+							Log::error("Fout bij het lezen van spreadsheet: "	.	$e->getMessage());
+							throw new Exception("Kon het bestand niet lezen:	"	.	$e->getMessage());
+						}
+
             
-            // Laad spreadsheet
-            $spreadsheet = IOFactory::load($filePath);
             $worksheet = $spreadsheet->getActiveSheet();
             $data = $worksheet->toArray();
+						
+						Log::debug('Excel headers:', [
+                'raw' => $data[0],
+                'cleaned' => array_map('trim', $data[0]),
+                'expected' => ['studentnummer', 'aanwezigheid', 'rooster', 'week', 'jaar']
+            ]);
 
             // Valideer headers
             if (!$this->validateHeaders($data[0])) {
-                throw new Exception("Ongeldige kolom headers. Verwacht: Studentnummer, Aanwezigheid, Rooster, Week, Jaar");
+                Log::error('Headers validatie gefaald', [
+                    'received' => $data[0],
+                    'expected' => ['studentnummer', 'aanwezigheid', 'rooster', 'week', 'jaar']
+                ]);
+                throw new Exception("Ongeldige kolom headers. Verwacht: studentnummer, aanwezigheid, rooster, week, jaar");
             }
+
 
             // Begin database transactie
             DB::beginTransaction();
@@ -80,7 +114,9 @@ class AarImportService
             return [
                 'success' => true,
                 'message' => "Bestand succesvol geïmporteerd",
-                'stats' => $stats
+                'stats' => $stats,
+                'records_imported' => $stats['aantal_records'], // Voeg deze lijn toe!
+                'records' => $stats['aantal_records']           // Voeg ook deze toe voor compatibiliteit
             ];
 
         } catch (Exception $e) {
@@ -123,12 +159,57 @@ class AarImportService
 
     private function validateHeaders($headers)
     {
-        $expectedHeaders = ['Studentnummer', 'Aanwezigheid', 'Rooster', 'Week', 'Jaar'];
+        $expectedHeaders = ['studentnummer', 'aanwezigheid', 'rooster', 'week', 'jaar'];
         
-        // Trim whitespace from headers
-        $cleanHeaders = array_map('trim', $headers);
+        // Ensure we have at least 5 columns
+        if (count($headers) < 5) {
+            Log::error('Te weinig kolommen in bestand', ['count' => count($headers)]);
+            return false;
+        }
+
+        // Only look at the first 5 columns
+        $relevantHeaders = array_slice($headers, 0, 5);
         
-        return $cleanHeaders === $expectedHeaders;
+        // Clean up and normalize headers (more flexible for ODS files)
+        $cleanHeaders = array_map(function($header) {
+            if (empty($header)) return '';
+            
+            // Convert to lowercase, remove extra spaces
+            $clean = strtolower(trim($header));
+            
+            // Remove special characters that might appear in ODS format
+            $clean = preg_replace('/[^a-z0-9]/', '', $clean);
+            
+            return $clean;
+        }, $relevantHeaders);
+        
+        // Also normalize expected headers the same way
+        $cleanExpected = array_map(function($header) {
+            return preg_replace('/[^a-z0-9]/', '', $header);
+        }, $expectedHeaders);
+        
+        // Log for debugging
+        Log::debug('Header validation:', [
+            'original' => $relevantHeaders,
+            'cleaned' => $cleanHeaders,
+            'expected' => $cleanExpected
+        ]);
+        
+        // More flexible comparison - check if headers contain the expected text
+        $valid = true;
+        for ($i = 0; $i < 5; $i++) {
+            // If header is empty or doesn't contain the expected text, validation fails
+            if (empty($cleanHeaders[$i]) || strpos($cleanHeaders[$i], $cleanExpected[$i]) === false) {
+                Log::error("Header validatie gefaald voor kolom $i", [
+                    'expected' => $cleanExpected[$i], 
+                    'found' => $cleanHeaders[$i]
+                ]);
+                $valid = false;
+                break;
+            }
+        }
+        
+        return $valid;
     }
 
     private function isEmptyRow($row)
@@ -185,7 +266,7 @@ class AarImportService
                     'aanwezigheid' => $aanwezigheid,
                     'rooster' => $rooster,
                     'bron_bestand' => $fileName,
-                    'geimporteerd_op' => $importTime
+                    'created_at' => $importTime
                 ]);
                 $updated = true;
             } else {
@@ -197,7 +278,7 @@ class AarImportService
                     'week' => $week,
                     'jaar' => $jaar,
                     'bron_bestand' => $fileName,
-                    'geimporteerd_op' => $importTime
+                    'created_at' => $importTime
                 ]);
             }
 
@@ -224,7 +305,7 @@ class AarImportService
             'aantal_records' => $stats['aantal_records'],
             'aantal_nieuwe_studenten' => $stats['aantal_nieuwe_studenten'],
             'aantal_updates' => $stats['aantal_updates'],
-            'geimporteerd_op' => $startTime
+            'created_at' => $startTime
         ]);
     }
 }

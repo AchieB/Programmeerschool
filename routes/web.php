@@ -1,16 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentViewController;
 
-Route::get('/student-overview', [StudentController::class, 'overview']);
-Route::get('/student-overview', function () {
-    return view('student-overview');
-});
-// Route::get('/import-data', [StudentController::class, 'import-data']);
-// Route::get('/', function () {
-//     return view('import-data');
-// });
+Route::get('/student-overview/{studentnummer?}', [StudentViewController::class, 'showOverview']);
+
+// Import data route blijft ongewijzigd
 Route::get('/import-data', function () {
     return view('import-data', [
         'importHistory' => []

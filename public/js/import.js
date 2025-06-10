@@ -1,294 +1,329 @@
 
 let selectedFile = null;
 
-const uploadUrl = window.uploadUrl || '/import/upload';
-const historyUrl = window.historyUrl || '/import/history';
+// Laravel URLs (set by Blade template)
+const uploadUrl = window.uploadUrl || 'api/import/upload';
+const historyUrl = window.historyUrl || 'api/import/logs';
 
 const aarValidation = {
-    filenamePattern: /^AAR_(\d{4})_W(\d{1,2})_([a-zA-Z0-9]+)\.(xlsx|xls|ods)$/,
-    maxFileSize: 10 * 1024 * 1024, // 10MB
-    allowedExtensions: ['.xlsx', '.xls', '.ods']
+	filenamePattern: /^AAR_(\d{4})_W(\d{1,2})_([a-zA-Z0-9]+)\.(xlsx|xls|ods)$/,
+	maxFileSize: 10 * 1024 * 1024, // 10MB
+	allowedExtensions: ['.xlsx', '.xls', '.ods']
 };
 
 
 function handleFileSelect(event) {
-    const file = event.target.files[0];
-    const fileInfo = document.getElementById('fileInfo');
-    const fileName = document.getElementById('fileName');
-    const fileDetails = document.getElementById('fileDetails');
-    const uploadBtn = document.getElementById('uploadBtn');
+	const file = event.target.files[0];
+	const fileInfo = document.getElementById('fileInfo');
+	const fileName = document.getElementById('fileName');
+	const fileDetails = document.getElementById('fileDetails');
+	const uploadBtn = document.getElementById('uploadBtn');
 
-    if (file) {
-        console.log('File selected:', file.name);
+	if (file) {
+		console.log('File selected:', file.name);
 
-        const validation = validateFile(file);
+		// Validate file
+		const validation = validateFile(file);
 
-        if (!validation.valid) {
-            showStatus(validation.message, 'error');
-            clearFileSelection();
-            return;
-        }
+		if (!validation.valid) {
+			showStatus(validation.message, 'error');
+			clearFileSelection();
+			return;
+		}
 
-        selectedFile = file;
+		// File is valid
+		selectedFile = file;
 
-        fileName.textContent = file.name;
+		// Update UI
+		fileName.textContent = file.name;
 
-        let details = `Grootte: ${formatFileSize(file.size)} | Type: ${file.type || getFileExtension(file.name)}`;
+		// Create enhanced file details with AAR info
+		let details = `Grootte: ${formatFileSize(file.size)} | Type: ${file.type || getFileExtension(file.name)}`;
 
-        const aarInfo = parseAARFilename(file.name);
-        if (aarInfo.valid) {
-            details += `\n📅 Jaar: ${aarInfo.year} | 📊 Week: ${aarInfo.week} | 🏷️ Code: ${aarInfo.code}`;
-        }
+		const aarInfo = parseAARFilename(file.name);
+		if (aarInfo.valid) {
+			details += `\n📅 Jaar: ${aarInfo.year} | 📊 Week: ${aarInfo.week} | 🏷️ Code: ${aarInfo.code}`;
+		}
 
-        fileDetails.textContent = details;
-        fileInfo.classList.add('show');
-        uploadBtn.disabled = false;
+		fileDetails.textContent = details;
+		fileInfo.classList.add('show');
+		uploadBtn.disabled = false;
 
-        showStatus('Bestand gevalideerd en klaar voor upload!', 'success');
+		// Show success message
+		showStatus('Bestand gevalideerd en klaar voor upload!', 'success');
 
-        setTimeout(hideStatus, 3000);
-    } else {
-        clearFileSelection();
-    }
+		// Hide previous status messages
+		setTimeout(hideStatus, 3000);
+	} else {
+		clearFileSelection();
+	}
 }
 
 function validateFile(file) {
-    const allowedTypes = ['.xlsx', '.xls', '.ods'];
-    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+	// Check file type
+	const allowedTypes = ['.xlsx', '.xls', '.ods'];
+	const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
 
-    if (!allowedTypes.includes(fileExtension)) {
-        return {
-            valid: false,
-            message: `Ongeldig bestandstype: ${fileExtension}. Alleen .xlsx, .xls en .ods bestanden zijn toegestaan.`
-        };
-    }
+	if (!allowedTypes.includes(fileExtension)) {
+		return {
+			valid: false,
+			message: `Ongeldig bestandstype: ${fileExtension}. Alleen .xlsx, .xls en .ods bestanden zijn toegestaan.`
+		};
+	}
 
-    if (file.size > aarValidation.maxFileSize) {
-        return {
-            valid: false,
-            message: `Bestand is te groot: ${formatFileSize(file.size)}. Maximum grootte is ${formatFileSize(aarValidation.maxFileSize)}.`
-        };
-    }
+	// Check file size (max 10MB)
+	if (file.size > aarValidation.maxFileSize) {
+		return {
+			valid: false,
+			message: `Bestand is te groot: ${formatFileSize(file.size)}. Maximum grootte is ${formatFileSize(aarValidation.maxFileSize)}.`
+		};
+	}
 
-    if (file.size === 0) {
-        return {
-            valid: false,
-            message: 'Bestand is leeg.'
-        };
-    }
+	if (file.size === 0) {
+		return {
+			valid: false,
+			message: 'Bestand is leeg.'
+		};
+	}
 
-    const aarInfo = parseAARFilename(file.name);
-    if (!aarInfo.valid) {
-        return {
-            valid: false,
-            message: 'Bestandsnaam moet het AAR formaat hebben: AAR_[JAAR]_W[WEEK]_[CODE].[extensie]'
-        };
-    }
+	// Check filename pattern
+	const aarInfo = parseAARFilename(file.name);
+	if (!aarInfo.valid) {
+		return {
+			valid: false,
+			message: 'Bestandsnaam moet het AAR formaat hebben: AAR_[JAAR]_W[WEEK]_[CODE].[extensie]'
+		};
+	}
 
-    const currentYear = new Date().getFullYear();
-    if (aarInfo.year < 2020 || aarInfo.year > currentYear + 1) {
-        return {
-            valid: false,
-            message: `Ongeldig jaar: ${aarInfo.year}. Verwacht tussen 2020 en ${currentYear + 1}.`
-        };
-    }
+	// Validate year and week
+	const currentYear = new Date().getFullYear();
+	if (aarInfo.year < 2020 || aarInfo.year > currentYear + 1) {
+		return {
+			valid: false,
+			message: `Ongeldig jaar: ${aarInfo.year}. Verwacht tussen 2020 en ${currentYear + 1}.`
+		};
+	}
 
-    if (aarInfo.week < 1 || aarInfo.week > 53) {
-        return {
-            valid: false,
-            message: `Ongeldige week: ${aarInfo.week}. Verwacht tussen 1 en 53.`
-        };
-    }
+	if (aarInfo.week < 1 || aarInfo.week > 53) {
+		return {
+			valid: false,
+			message: `Ongeldige week: ${aarInfo.week}. Verwacht tussen 1 en 53.`
+		};
+	}
 
-    return {
-        valid: true,
-        message: 'Bestand is geldig!'
-    };
+	return {
+		valid: true,
+		message: 'Bestand is geldig!'
+	};
 }
 
 function parseAARFilename(filename) {
-    const match = filename.match(aarValidation.filenamePattern);
-    if (match) {
-        return {
-            valid: true,
-            year: parseInt(match[1]),
-            week: parseInt(match[2]),
-            code: match[3],
-            extension: match[4]
-        };
-    }
-    return { valid: false };
+	const match = filename.match(aarValidation.filenamePattern);
+	if (match) {
+		return {
+			valid: true,
+			year: parseInt(match[1]),
+			week: parseInt(match[2]),
+			code: match[3],
+			extension: match[4]
+		};
+	}
+	return { valid: false };
 }
 
 function clearFileSelection() {
-    selectedFile = null;
-    document.getElementById('fileInput').value = '';
-    document.getElementById('fileInfo').classList.remove('show');
-    document.getElementById('uploadBtn').disabled = true;
-    document.getElementById('fileName').textContent = 'Geen bestand geselecteerd';
-    document.getElementById('fileDetails').textContent = 'Selecteer een AAR-bestand om te uploaden';
+	selectedFile = null;
+	document.getElementById('fileInput').value = '';
+	document.getElementById('fileInfo').classList.remove('show');
+	document.getElementById('uploadBtn').disabled = true;
+	document.getElementById('fileName').textContent = 'Geen bestand geselecteerd';
+	document.getElementById('fileDetails').textContent = 'Selecteer een AAR-bestand om te uploaden';
 }
 
 function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+	if (bytes === 0) return '0 Bytes';
+	const k = 1024;
+	const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
+	return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 function getFileExtension(filename) {
-    return '.' + filename.split('.').pop().toLowerCase();
+	return '.' + filename.split('.').pop().toLowerCase();
 }
 
 
 async function uploadFile() {
-    if (!selectedFile) {
-        showStatus('Selecteer eerst een bestand.', 'error');
-        return;
-    }
+	if (!selectedFile) {
+		showStatus('Selecteer eerst een bestand.', 'error');
+		return;
+	}
 
-    try {
-        console.log('Starting upload for:', selectedFile.name);
+	try {
+		console.log('Starting upload for:', selectedFile.name);
+		console.log('Upload URL:', uploadUrl);  // Debug: controleer welke URL wordt gebruikt
 
-        showUploadProgress(true);
-        setUploadProgress(0);
-        showStatus('Bestand wordt geüpload...', 'success');
+		// Log file details
+		console.log('File being uploaded:', {
+			name: selectedFile.name,
+			type: selectedFile.type,
+			size: selectedFile.size,
+			lastModified: new Date(selectedFile.lastModified)
+		});
 
-        const uploadBtn = document.getElementById('uploadBtn');
-        uploadBtn.disabled = true;
-        uploadBtn.textContent = 'Uploading...';
+		// Start upload process
+		showUploadProgress(true);
+		setUploadProgress(0);
+		showStatus('Bestand wordt geüpload...', 'success');
 
-        const formData = new FormData();
-        formData.append('aar_file', selectedFile);
-        formData.append('_token', getCSRFToken());
+		// Disable upload button during upload
+		const uploadBtn = document.getElementById('uploadBtn');
+		uploadBtn.disabled = true;
+		uploadBtn.textContent = 'Uploading...';
 
-        const aarInfo = parseAARFilename(selectedFile.name);
-        if (aarInfo.valid) {
-            formData.append('detected_year', aarInfo.year);
-            formData.append('detected_week', aarInfo.week);
-            formData.append('detected_code', aarInfo.code);
-        }
+		// Create form data
+		const formData = new FormData();
+		formData.append('aar_file', selectedFile);
+		formData.append('_token', getCSRFToken());
 
-        simulateProgress();
+		// Add parsed AAR information
+		const aarInfo = parseAARFilename(selectedFile.name);
+		if (aarInfo.valid) {
+			formData.append('detected_year', aarInfo.year);
+			formData.append('detected_week', aarInfo.week);
+			formData.append('detected_code', aarInfo.code);
+		}
 
-        const response = await fetch(uploadUrl, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
+		// Simulate progress
+		simulateProgress();
 
-        const result = await response.json();
+		// Send to Laravel backend
+		const response = await fetch(uploadUrl, {
+			method: 'POST',
+			body: formData,
+			headers: {
+				'X-Requested-With': 'XMLHttpRequest'
+			}
+		});
 
-        if (response.ok && result.success) {
-            const message = result.message || `Bestand "${selectedFile.name}" is succesvol geïmporteerd`;
-            const recordCount = result.records_imported || 0;
+		const result = await response.json();
+		console.log('Upload result:', result);
 
-            showStatus(`${message} (${recordCount} records geïmporteerd)`, 'success');
-            addToHistory(selectedFile.name, 'Succesvol', recordCount);
-            clearFileSelection();
+		if (response.ok && result.success) {
+			// Upload successful
+			const message = result.message || `Bestand "${selectedFile.name}" is succesvol geïmporteerd`;
+			const recordCount = result.records_imported || 0;
 
-            setTimeout(loadImportHistory, 1000);
-        } else {
-            const errorMessage = result.message || result.error || 'Er is een fout opgetreden tijdens het uploaden.';
-            showStatus(`Upload gefaald: ${errorMessage}`, 'error');
-            addToHistory(selectedFile.name, 'Gefaald', 0, errorMessage);
-        }
+			showStatus(`${message} (${recordCount} records geïmporteerd)`, 'success');
+			addToHistory(selectedFile.name, 'Succesvol', recordCount);
+			clearFileSelection();
 
-    } catch (error) {
-        console.error('Upload error:', error);
+			// Refresh history table
+			setTimeout(loadImportHistory, 1000);
+		} else {
+			// Upload failed
+			const errorMessage = result.message || result.error || 'Er is een fout opgetreden tijdens het uploaden.';
+			showStatus(`Upload gefaald: ${errorMessage}`, 'error');
+			addToHistory(selectedFile.name, 'Gefaald', 0, errorMessage);
+		}
 
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            showStatus('Kan geen verbinding maken met server. Backend nog niet gereed?', 'error');
-        } else {
-            showStatus(`Upload gefaald: ${error.message}`, 'error');
-        }
+	} catch (error) {
+		console.error('Upload error:', error);
 
-        addToHistory(selectedFile.name, 'Gefaald', 0, error.message);
-    } finally {
-        showUploadProgress(false);
-        setUploadProgress(0);
+		// Handle different types of errors
+		if (error.name === 'TypeError' && error.message.includes('fetch')) {
+			showStatus('Kan geen verbinding maken met server. Backend nog niet gereed?', 'error');
+		} else {
+			showStatus(`Upload gefaald: ${error.message}`, 'error');
+		}
 
-        const uploadBtn = document.getElementById('uploadBtn');
-        uploadBtn.textContent = 'Upload Bestand';
-        uploadBtn.disabled = selectedFile === null;
-    }
+		addToHistory(selectedFile.name, 'Gefaald', 0, error.message);
+	} finally {
+		// Reset upload state
+		showUploadProgress(false);
+		setUploadProgress(0);
+
+		const uploadBtn = document.getElementById('uploadBtn');
+		uploadBtn.textContent = 'Upload Bestand';
+		uploadBtn.disabled = selectedFile === null;
+	}
 }
 
 function showUploadProgress(show) {
-    const uploadProgress = document.getElementById('uploadProgress');
-    if (uploadProgress) {
-        uploadProgress.style.display = show ? 'block' : 'none';
-    }
+	const uploadProgress = document.getElementById('uploadProgress');
+	if (uploadProgress) {
+		uploadProgress.style.display = show ? 'block' : 'none';
+	}
 }
 
 function setUploadProgress(percentage) {
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
+	const progressFill = document.getElementById('progressFill');
+	const progressText = document.getElementById('progressText');
 
-    if (progressFill) progressFill.style.width = percentage + '%';
-    if (progressText) progressText.textContent = Math.round(percentage) + '%';
+	if (progressFill) progressFill.style.width = percentage + '%';
+	if (progressText) progressText.textContent = Math.round(percentage) + '%';
 }
 
 function simulateProgress() {
-    let progress = 0;
-    const interval = setInterval(() => {
-        progress += Math.random() * 15;
-        if (progress > 100) progress = 100;
+	let progress = 0;
+	const interval = setInterval(() => {
+		progress += Math.random() * 15;
+		if (progress > 100) progress = 100;
 
-        setUploadProgress(progress);
+		setUploadProgress(progress);
 
-        if (progress >= 100) {
-            clearInterval(interval);
-        }
-    }, 200);
+		if (progress >= 100) {
+			clearInterval(interval);
+		}
+	}, 200);
 }
 
 
 function showStatus(message, type = 'success') {
-    const statusMessage = document.getElementById('statusMessage');
-    if (statusMessage) {
-        statusMessage.textContent = message;
-        statusMessage.className = `status-message ${type}`;
-        statusMessage.style.display = 'block';
+	const statusMessage = document.getElementById('statusMessage');
+	if (statusMessage) {
+		statusMessage.textContent = message;
+		statusMessage.className = `status-message ${type}`;
+		statusMessage.style.display = 'block';
 
-        if (type === 'success') {
-            setTimeout(() => {
-                hideStatus();
-            }, 5000);
-        }
-    } else {
-        console.log(`Status (${type}):`, message);
-    }
+		// Auto-hide success messages after 5 seconds
+		if (type === 'success') {
+			setTimeout(() => {
+				hideStatus();
+			}, 5000);
+		}
+	} else {
+		// Fallback to console if status element doesn't exist
+		console.log(`Status (${type}):`, message);
+	}
 }
 
 function hideStatus() {
-    const statusMessage = document.getElementById('statusMessage');
-    if (statusMessage) {
-        statusMessage.style.display = 'none';
-    }
+	const statusMessage = document.getElementById('statusMessage');
+	if (statusMessage) {
+		statusMessage.style.display = 'none';
+	}
 }
 
 function addToHistory(filename, status, recordsImported = 0, errorMessage = '') {
-    const tableBody = document.getElementById('historyTableBody');
-    if (!tableBody) return;
+	const tableBody = document.getElementById('historyTableBody');
+	if (!tableBody) return;
 
-    const now = new Date();
-    const date = now.toLocaleDateString('nl-NL');
-    const time = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+	const now = new Date();
+	const date = now.toLocaleDateString('nl-NL');
+	const time = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
 
-    const row = document.createElement('tr');
-    const statusClass = status === 'Succesvol' ? 'status-succesvol' : 'status-gefaald';
+	const row = document.createElement('tr');
+	const statusClass = status === 'Succesvol' ? 'status-succesvol' : 'status-gefaald';
 
-    const aarInfo = parseAARFilename(filename);
-    let filenameDisplay = filename;
-    if (aarInfo.valid) {
-        filenameDisplay += `<br><small style="color: #6b7280; font-size: 11px;">${aarInfo.year}, Week ${aarInfo.week}</small>`;
-    }
+	// Enhanced filename display with AAR info
+	const aarInfo = parseAARFilename(filename);
+	let filenameDisplay = filename;
+	if (aarInfo.valid) {
+		filenameDisplay += `<br><small style="color: #6b7280; font-size: 11px;">${aarInfo.year}, Week ${aarInfo.week}</small>`;
+	}
 
-    row.innerHTML = `
+	row.innerHTML = `
         <td>${date}</td>
         <td>${time}</td>
         <td>${filenameDisplay}</td>
@@ -296,85 +331,66 @@ function addToHistory(filename, status, recordsImported = 0, errorMessage = '') 
         <td><span class="${statusClass}">${status}</span></td>
     `;
 
-    tableBody.insertBefore(row, tableBody.firstChild);
+	// Add new row at the beginning
+	tableBody.insertBefore(row, tableBody.firstChild);
 
-    const emptyRow = tableBody.querySelector('td[colspan="5"]');
-    if (emptyRow) {
-        emptyRow.parentElement.remove();
-    }
+	// Remove empty message if exists
+	const emptyRow = tableBody.querySelector('td[colspan="5"]');
+	if (emptyRow) {
+		emptyRow.parentElement.remove();
+	}
 }
 
 async function loadImportHistory() {
-    try {
-        const response = await fetch(historyUrl, {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
+	try {
+		const response = await fetch(window.historyUrl);
 
-        if (response.ok) {
-            const history = await response.json();
-            updateHistoryTable(history);
-        } else {
-            console.log('Backend not ready - using demo data');
-            loadDemoHistory();
-        }
-    } catch (error) {
-        console.log('Backend not available - loading demo data');
-        loadDemoHistory();
-    }
+		if (!response.ok) {
+			throw new Error('Failed to load import history');
+		}
+
+		const history = await response.json();
+		updateHistoryTable(history);
+	} catch (error) {
+		console.error('Error loading import history:', error);
+		// Optional: show a user-friendly error message
+	}
 }
 
-function loadDemoHistory() {
-    const demoHistory = [
-        {
-            date: new Date(Date.now() - 86400000).toLocaleDateString('nl-NL'),
-            time: '14:30',
-            filename: 'AAR_2024_W12_ABC123.xlsx',
-            records_imported: 45,
-            status: 'Succesvol'
-        },
-        {
-            date: new Date(Date.now() - 172800000).toLocaleDateString('nl-NL'),
-            time: '09:15',
-            filename: 'AAR_2024_W11_DEF456.xlsx',
-            records_imported: 0,
-            status: 'Gefaald'
-        }
-    ];
-
-    updateHistoryTable(demoHistory);
-}
-
+// Update this function to match the field names from your API
 function updateHistoryTable(history) {
-    const tableBody = document.getElementById('historyTableBody');
-    if (!tableBody) return;
+	const tableBody = document.getElementById('historyTableBody');
 
-    tableBody.innerHTML = '';
+	if (!tableBody) {
+		console.error('History table body not found');
+		return;
+	}
 
-    if (history.length === 0) {
-        tableBody.innerHTML = `
+	if (history.length === 0) {
+		tableBody.innerHTML = `
             <tr>
                 <td colspan="5" style="text-align: center; color: #64748b;">
                     Nog geen imports uitgevoerd
                 </td>
             </tr>
         `;
-        return;
-    }
+		return;
+	}
 
-    history.forEach(record => {
-        const row = document.createElement('tr');
-        const statusClass = record.status === 'Succesvol' ? 'status-succesvol' : 'status-gefaald';
+	let html = '';
 
-        const aarInfo = parseAARFilename(record.filename);
-        let filenameDisplay = record.filename;
-        if (aarInfo.valid) {
-            filenameDisplay += `<br><small style="color: #6b7280; font-size: 11px;">${aarInfo.year}, Week ${aarInfo.week}</small>`;
-        }
+	history.forEach(record => {
+		const row = document.createElement('tr');
+		const statusClass = record.status === 'Succesvol' ? 'status-succesvol' : 'status-gefaald';
 
-        row.innerHTML = `
+		// Parse filename for additional info
+		const aarInfo = parseAARFilename(record.filename);
+		let filenameDisplay = record.filename;
+		if (aarInfo.valid) {
+			filenameDisplay += `<br><small style="color: #6b7280; font-size: 11px;">${aarInfo.year}, Week ${aarInfo.week}</small>`;
+		}
+
+		row.innerHTML = `
             <td>${record.date}</td>
             <td>${record.time}</td>
             <td>${filenameDisplay}</td>
@@ -382,87 +398,91 @@ function updateHistoryTable(history) {
             <td><span class="${statusClass}">${record.status}</span></td>
         `;
 
-        tableBody.appendChild(row);
-    });
+		tableBody.appendChild(row);
+	});
 }
 
 
 function getCSRFToken() {
-    const token = document.querySelector('meta[name="csrf-token"]');
-    return token ? token.getAttribute('content') : '';
+	const token = document.querySelector('meta[name="csrf-token"]');
+	return token ? token.getAttribute('content') : '';
 }
 
 
 
 function setupDragAndDrop() {
-    const uploadArea = document.getElementById('uploadArea');
-    if (!uploadArea) return;
+	const uploadArea = document.getElementById('uploadArea');
+	if (!uploadArea) return;
 
-    uploadArea.addEventListener('dragover', function (e) {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
+	uploadArea.addEventListener('dragover', function (e) {
+		e.preventDefault();
+		uploadArea.classList.add('dragover');
+	});
 
-    uploadArea.addEventListener('dragleave', function (e) {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-    });
+	uploadArea.addEventListener('dragleave', function (e) {
+		e.preventDefault();
+		uploadArea.classList.remove('dragover');
+	});
 
-    uploadArea.addEventListener('drop', function (e) {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
+	uploadArea.addEventListener('drop', function (e) {
+		e.preventDefault();
+		uploadArea.classList.remove('dragover');
 
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            const fileInput = document.getElementById('fileInput');
-            if (fileInput) {
-                fileInput.files = files;
-                handleFileSelect({ target: fileInput });
-            }
-        }
-    });
+		const files = e.dataTransfer.files;
+		if (files.length > 0) {
+			const fileInput = document.getElementById('fileInput');
+			if (fileInput) {
+				fileInput.files = files;
+				handleFileSelect({ target: fileInput });
+			}
+		}
+	});
 }
 
 
 function demonstrateUpload() {
-    const blob = new Blob(['Demo content'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const file = new File([blob], 'AAR_2024_W15_DEMO123.xlsx', { type: blob.type });
+	// Create a fake file for testing
+	const blob = new Blob(['Demo content'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+	const file = new File([blob], 'AAR_2024_W15_DEMO123.xlsx', { type: blob.type });
 
-    const fakeEvent = {
-        target: {
-            files: [file]
-        }
-    };
+	// Simulate file selection
+	const fakeEvent = {
+		target: {
+			files: [file]
+		}
+	};
 
-    handleFileSelect(fakeEvent);
-    console.log('Demo file selected! Click Upload to test.');
+	handleFileSelect(fakeEvent);
+	console.log('Demo file selected! Click Upload to test.');
 }
 
 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('Import page initializing...');
+	console.log('Import page initializing...');
 
-    setupDragAndDrop();
+	// Setup drag & drop
+	setupDragAndDrop();
 
-    loadImportHistory();
+	// Load import history from backend
+	loadImportHistory();
 
-    console.log('Import page initialized successfully!');
-    console.log('Try: demonstrateUpload() to test file selection');
+	console.log('Import page initialized successfully!');
+	console.log('Try: demonstrateUpload() to test file selection');
 });
 
 
 window.addEventListener('error', function (e) {
-    console.error('JavaScript error:', e.error);
-    showStatus('Er is een onverwachte fout opgetreden.', 'error');
+	console.error('JavaScript error:', e.error);
+	showStatus('Er is een onverwachte fout opgetreden.', 'error');
 });
 
 window.addEventListener('unhandledrejection', function (e) {
-    console.error('Network error:', e.reason);
-    if (e.reason.message && e.reason.message.includes('fetch')) {
-        showStatus('Backend nog niet beschikbaar - frontend is klaar.', 'warning');
-    } else {
-        showStatus('Netwerkfout: Controleer je internetverbinding.', 'error');
-    }
+	console.error('Network error:', e.reason);
+	if (e.reason.message && e.reason.message.includes('fetch')) {
+		showStatus('Backend nog niet beschikbaar - frontend is klaar.', 'warning');
+	} else {
+		showStatus('Netwerkfout: Controleer je internetverbinding.', 'error');
+	}
 });
 
 window.demonstrateUpload = demonstrateUpload;
@@ -471,38 +491,40 @@ window.demonstrateUpload = demonstrateUpload;
 
 
 function forceLoadDemoHistory() {
-    const tableBody = document.getElementById('historyTableBody');
-    console.log('Found table body:', tableBody);
+	const tableBody = document.getElementById('historyTableBody');
+	console.log('Found table body:', tableBody);
 
-    if (!tableBody) {
-        console.log('ERROR: historyTableBody element not found!');
-        return;
-    }
+	if (!tableBody) {
+		console.log('ERROR: historyTableBody element not found!');
+		return;
+	}
 
-    tableBody.innerHTML = '';
+	// Clear existing content
+	tableBody.innerHTML = '';
 
-    const demoData = [
-        {
-            date: '5-6-2025',
-            time: '14:30',
-            filename: 'AAR_2024_W12_ABC123.xlsx',
-            records_imported: 45,
-            status: 'Succesvol'
-        },
-        {
-            date: '4-6-2025',
-            time: '09:15',
-            filename: 'AAR_2024_W11_DEF456.xlsx',
-            records_imported: 0,
-            status: 'Gefaald'
-        }
-    ];
+	// Add demo data
+	const demoData = [
+		{
+			date: '5-6-2025',
+			time: '14:30',
+			filename: 'AAR_2024_W12_ABC123.xlsx',
+			records_imported: 45,
+			status: 'Succesvol'
+		},
+		{
+			date: '4-6-2025',
+			time: '09:15',
+			filename: 'AAR_2024_W11_DEF456.xlsx',
+			records_imported: 0,
+			status: 'Gefaald'
+		}
+	];
 
-    demoData.forEach(record => {
-        const row = document.createElement('tr');
-        const statusClass = record.status === 'Succesvol' ? 'status-succesvol' : 'status-gefaald';
+	demoData.forEach(record => {
+		const row = document.createElement('tr');
+		const statusClass = record.status === 'Succesvol' ? 'status-succesvol' : 'status-gefaald';
 
-        row.innerHTML = `
+		row.innerHTML = `
             <td>${record.date}</td>
             <td>${record.time}</td>
             <td>${record.filename}<br><small style="color: #6b7280; font-size: 11px;">2024, Week 12</small></td>
@@ -510,10 +532,10 @@ function forceLoadDemoHistory() {
             <td><span class="${statusClass}">${record.status}</span></td>
         `;
 
-        tableBody.appendChild(row);
-    });
+		tableBody.appendChild(row);
+	});
 
-    console.log('Demo history added successfully!');
+	console.log('Demo history added successfully!');
 }
 
 forceLoadDemoHistory();
