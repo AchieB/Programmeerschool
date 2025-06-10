@@ -1,8 +1,8 @@
 
 let selectedFile = null;
 
-const uploadUrl = window.uploadUrl || '/import/upload';
-const historyUrl = window.historyUrl || '/import/history';
+const uploadUrl = window.uploadUrl || 'api/import/upload';
+const historyUrl = window.historyUrl || 'api/import/logs';
 
 const aarValidation = {
     filenamePattern: /^AAR_(\d{4})_W(\d{1,2})_([a-zA-Z0-9]+)\.(xlsx|xls|ods)$/,
@@ -150,6 +150,14 @@ async function uploadFile() {
 
     try {
         console.log('Starting upload for:', selectedFile.name);
+        console.log('Upload URL:', uploadUrl);
+
+        console.log('File being uploaded:', {
+            name: selectedFile.name,
+            type: selectedFile.type,
+            size: selectedFile.size,
+            lastModified: new Date(selectedFile.lastModified)
+        });
 
         showUploadProgress(true);
         setUploadProgress(0);
@@ -181,6 +189,7 @@ async function uploadFile() {
         });
 
         const result = await response.json();
+        console.log('Upload result:', result);
 
         if (response.ok && result.success) {
             const message = result.message || `Bestand "${selectedFile.name}" is succesvol geïmporteerd`;
@@ -306,52 +315,26 @@ function addToHistory(filename, status, recordsImported = 0, errorMessage = '') 
 
 async function loadImportHistory() {
     try {
-        const response = await fetch(historyUrl, {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
+        const response = await fetch(window.historyUrl);
 
-        if (response.ok) {
-            const history = await response.json();
-            updateHistoryTable(history);
-        } else {
-            console.log('Backend not ready - using demo data');
-            loadDemoHistory();
+        if (!response.ok) {
+            throw new Error('Failed to load import history');
         }
+
+        const history = await response.json();
+        updateHistoryTable(history);
     } catch (error) {
-        console.log('Backend not available - loading demo data');
-        loadDemoHistory();
+        console.error('Error loading import history:', error);
     }
-}
-
-function loadDemoHistory() {
-    const demoHistory = [
-        {
-            date: new Date(Date.now() - 86400000).toLocaleDateString('nl-NL'),
-            time: '14:30',
-            filename: 'AAR_2024_W12_ABC123.xlsx',
-            records_imported: 45,
-            status: 'Succesvol'
-        },
-        {
-            date: new Date(Date.now() - 172800000).toLocaleDateString('nl-NL'),
-            time: '09:15',
-            filename: 'AAR_2024_W11_DEF456.xlsx',
-            records_imported: 0,
-            status: 'Gefaald'
-        }
-    ];
-
-    updateHistoryTable(demoHistory);
 }
 
 function updateHistoryTable(history) {
     const tableBody = document.getElementById('historyTableBody');
-    if (!tableBody) return;
 
-    tableBody.innerHTML = '';
+    if (!tableBody) {
+        console.error('History table body not found');
+        return;
+    }
 
     if (history.length === 0) {
         tableBody.innerHTML = `
@@ -363,6 +346,8 @@ function updateHistoryTable(history) {
         `;
         return;
     }
+
+    let html = '';
 
     history.forEach(record => {
         const row = document.createElement('tr');
