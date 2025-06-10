@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Default Filesystem Disk
@@ -29,7 +28,6 @@ return [
     */
 
     'disks' => [
-
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
@@ -59,7 +57,6 @@ return [
             'throw' => false,
             'report' => false,
         ],
-
     ],
 
     /*
@@ -77,4 +74,10 @@ return [
         public_path('storage') => storage_path('app/public'),
     ],
 
+    'mimes' => [
+        'ods' => [
+            'application/vnd.oasis.opendocument.spreadsheet',
+            'application/x-vnd.oasis.opendocument.spreadsheet',
+        ],
+    ],
 ];

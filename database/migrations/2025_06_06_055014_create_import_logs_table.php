@@ -19,7 +19,6 @@ return new class extends Migration
             $table->integer('aantal_records')->default(0);
             $table->integer('aantal_nieuwe_studenten')->default(0);
             $table->integer('aantal_updates')->default(0);
-            $table->timestamp('geimporteerd_op');
             $table->timestamps();
         });
     }

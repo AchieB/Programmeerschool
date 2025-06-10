@@ -20,7 +20,6 @@ return new class extends Migration
             $table->integer('week');
             $table->integer('jaar');
             $table->string('bron_bestand'); 
-            $table->timestamp('geimporteerd_op');
             $table->timestamps();
         });
     }
