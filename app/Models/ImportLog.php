@@ -16,10 +16,10 @@ class ImportLog extends Model
         'aantal_records',
         'aantal_nieuwe_studenten',
         'aantal_updates',
-        'geimporteerd_op'
+        'created_at'
     ];
 
     protected $casts = [
-        'geimporteerd_op' => 'datetime'
+        'created_at' => 'datetime'
     ];
 }

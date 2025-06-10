@@ -18,11 +18,11 @@ class ImportController extends Controller
 
 		public function index()
 		{
-			$recentImports = ImportLog::latest('geimporteerd_op')
+			$recentImports = ImportLog::latest('created_at')
 						->take(10)
 						->get();
 			
-			return view('import.index', compact('recentImports'));
+			return view('import-data', compact('recentImports'));
 		}
 		
 		public function upload(Request $request)
@@ -55,7 +55,7 @@ class ImportController extends Controller
 				//Verwijder het tijdelijke bestand
 				Storage::delete($tempPath);
 
-				if ($result['succes']) {
+				if ($result['success']) { // Fix: was 'succes', nu 'success'
 					return redirect()->back()->with('success', [
 					'message' => $result['message'],
 					'stats' => $result['stats']
@@ -70,7 +70,7 @@ class ImportController extends Controller
 
 public function logs()
 {
-	$logs = ImportLog::latest('geimporteerd_op')->paginate(20);
+	$logs = ImportLog::latest('created_at')->paginate(20);
 	return view('import.logs', compact('logs'));
 }
 		
