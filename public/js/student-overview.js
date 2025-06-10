@@ -6,8 +6,8 @@ let currentStudentData = {
 };
 
 const API_ENDPOINTS = {
-    studentData: window.studentDataUrl || '/api/student-data',
-    weeklyData: window.weeklyDataUrl || '/api/weekly-data'
+	studentData: window.studentDataUrl || '/api/student-data',
+	weeklyData: window.weeklyDataUrl || '/api/weekly-data'
 };
 
 function processExcelData(excelData, targetStudentNumber = null) {
@@ -254,9 +254,206 @@ function updateSummaryCards(summary) {
         worstWeekElement.textContent = `Week ${summary.worstWeek.week}`;
         worstWeekElement.className = `value ${getScoreClass(summary.worstWeek.percentage)}`;
     }
+=======
+// Debug at start of file to check variables
+console.log('Student overview script initializing');
+console.log('API Endpoints:', {
+	studentData: window.studentDataUrl,
+	weeklyData: window.weeklyDataUrl
+});
+console.log('Student number:', window.studentnummer);
+
+// Update your loadStudentData function
+async function loadStudentData(studentId = null, startWeek = 1, endWeek = 52) {
+	try {
+		showLoadingState(true);
+		console.log('Loading student data...');
+
+		// Use the studentnummer from parameters, window object, or null
+		const studentNummer = studentId || window.studentnummer || null;
+		console.log('Using student number:', studentNummer);
+
+		if (studentNummer) {
+			// Get the current year and previous year
+			const currentYear = new Date().getFullYear(); // 2025
+			const previousYear = currentYear - 1; // 2024
+
+			console.log(`Attempting to fetch data for years ${previousYear} and ${currentYear}`);
+
+			// IMPORTANT: Use window.weeklyDataUrl directly, not through API_ENDPOINTS
+			// Fetch data for both years
+			let currentYearData = null;
+			let previousYearData = null;
+
+			// Try current year
+			const currentYearParam = new URLSearchParams({ jaar: currentYear }).toString();
+			const currentYearUrl = `${window.weeklyDataUrl}?${currentYearParam}`;
+			console.log(`Fetching current year data from: ${currentYearUrl}`);
+
+			try {
+				const currentResponse = await fetch(currentYearUrl, {
+					headers: {
+						'Accept': 'application/json'
+					}
+				});
+
+				console.log('Current year response status:', currentResponse.status);
+
+				if (currentResponse.ok) {
+					const apiData = await currentResponse.json();
+					if (apiData.success && apiData.data) {
+						currentYearData = transformApiDataToUiFormat(apiData.data, currentYear);
+						console.log('Current year data retrieved successfully');
+					}
+				}
+			} catch (error) {
+				console.error('Error fetching current year data:', error);
+			}
+
+			// Try previous year
+			const previousYearParam = new URLSearchParams({ jaar: previousYear }).toString();
+			const previousYearUrl = `${window.weeklyDataUrl}?${previousYearParam}`;
+			console.log(`Fetching previous year data from: ${previousYearUrl}`);
+
+			try {
+				const previousResponse = await fetch(previousYearUrl, {
+					headers: {
+						'Accept': 'application/json'
+					}
+				});
+
+				console.log('Previous year response status:', previousResponse.status);
+
+				if (previousResponse.ok) {
+					const apiData = await previousResponse.json();
+					if (apiData.success && apiData.data) {
+						previousYearData = transformApiDataToUiFormat(apiData.data, previousYear);
+						console.log('Previous year data retrieved successfully');
+					}
+				}
+			} catch (error) {
+				console.error('Error fetching previous year data:', error);
+			}
+
+			// Now handle the data
+			if (currentYearData && previousYearData) {
+				console.log('Data available for both years - combining');
+				const combinedData = combineYearData(previousYearData, currentYearData);
+				updateStudentData(combinedData);
+				return;
+			} else if (currentYearData) {
+				console.log('Only current year data available');
+				updateStudentData(currentYearData);
+				return;
+			} else if (previousYearData) {
+				console.log('Only previous year data available');
+				updateStudentData(previousYearData);
+				return;
+			}
+		}
+
+		console.warn('No data found - showing demo data');
+		loadDemoData();
+	} catch (error) {
+		console.error('Error in loadStudentData:', error);
+		loadDemoData();
+	} finally {
+		showLoadingState(false);
+	}
 }
 
+// Make sure your transformApiDataToUiFormat function assigns the year
+function transformApiDataToUiFormat(apiData, year) {
+	console.log(`Transforming API data for year ${year}`);
+
+	// Extract weekly data with year information
+	const weeks = apiData.wekelijkse_voortgang.map(week => ({
+		week_number: week.week,
+		year: year, // Add year information
+		percentage: week.week_percentage,
+		minutes_present: week.week_aanwezigheid,
+		total_minutes: week.week_rooster
+	}));
+
+	// Find best and worst weeks
+	const bestWeek = weeks.reduce((best, current) =>
+		current.percentage > best.percentage ? current : best, weeks[0]);
+
+	const worstWeek = weeks.reduce((worst, current) =>
+		current.percentage < worst.percentage ? current : worst, weeks[0]);
+
+	return {
+		student: {
+			name: apiData.student.naam,
+			number: apiData.student.studentnummer,
+			class: apiData.student.klas || ''
+		},
+		summary: {
+			average: apiData.eindstatistieken.eindpercentage,
+			bestWeek: {
+				week: bestWeek.week_number,
+				year: bestWeek.year,
+				percentage: bestWeek.percentage
+			},
+			worstWeek: {
+				week: worstWeek.week_number,
+				year: worstWeek.year,
+				percentage: worstWeek.percentage
+			}
+		},
+		weeks: weeks,
+		year: year
+	};
+}
+
+// Function to combine data from both years
+function combineYearData(previousYearData, currentYearData) {
+	console.log('Combining data from both years');
+
+	// Combine weeks from both years
+	const combinedWeeks = [
+		...previousYearData.weeks,
+		...currentYearData.weeks
+	];
+
+	// Calculate total minutes for the combined average
+	const totalMinutesPresent = combinedWeeks.reduce((sum, week) => sum + week.minutes_present, 0);
+	const totalMinutesScheduled = combinedWeeks.reduce((sum, week) => sum + week.total_minutes, 0);
+	const combinedPercentage = totalMinutesScheduled > 0
+		? Math.round((totalMinutesPresent / totalMinutesScheduled) * 100)
+		: 0;
+
+	// Find the best and worst weeks across both years
+	const bestWeek = combinedWeeks.reduce((best, current) =>
+		current.percentage > best.percentage ? current : best, combinedWeeks[0]);
+
+	const worstWeek = combinedWeeks.reduce((worst, current) =>
+		current.percentage < worst.percentage ? current : worst, combinedWeeks[0]);
+
+	return {
+		student: currentYearData.student,
+		summary: {
+			average: combinedPercentage,
+			bestWeek: {
+				week: bestWeek.week_number,
+				year: bestWeek.year,
+				percentage: bestWeek.percentage
+			},
+			worstWeek: {
+				week: worstWeek.week_number,
+				year: worstWeek.year,
+				percentage: worstWeek.percentage
+			}
+		},
+		weeks: combinedWeeks,
+		combinedYears: true
+	};
+
+}
+
+// Update the updateWeeksGrid function to handle years in display
 function updateWeeksGrid(weeks) {
+
     const grid = document.getElementById('weeks-grid');
     if (!grid) return;
     grid.innerHTML = '';
@@ -301,10 +498,61 @@ function calculateFilteredStats(startWeek, endWeek) {
         bestWeek: { week: bestWeek.week_number, percentage: bestWeek.percentage },
         worstWeek: { week: worstWeek.week_number, percentage: worstWeek.percentage }
     };
+
 }
 
+// Add this function to update the summary cards
+function updateSummaryCards(summary) {
+	console.log('Updating summary cards with:', summary);
 
+	if (!summary) {
+		console.error('No summary data provided to updateSummaryCards');
+		return;
+	}
+
+	// Update average percentage
+	const averageElement = document.getElementById('average');
+	if (averageElement) {
+		averageElement.textContent = `${summary.average}%`;
+		averageElement.className = `value ${getScoreClass(summary.average)}`;
+	}
+
+	// Update status
+	const statusElement = document.getElementById('status');
+	if (statusElement) {
+		const status = getStatusText(summary.average);
+		statusElement.textContent = status;
+		statusElement.className = `value ${getScoreClass(summary.average)}`;
+	}
+
+	// Update best week
+	const bestWeekElement = document.getElementById('best-week');
+	if (bestWeekElement && summary.bestWeek) {
+		if (summary.bestWeek.year) {
+			bestWeekElement.textContent = `Week ${summary.bestWeek.week} (${summary.bestWeek.year})`;
+		} else {
+			bestWeekElement.textContent = `Week ${summary.bestWeek.week}`;
+		}
+		bestWeekElement.className = `value ${getScoreClass(summary.bestWeek.percentage)}`;
+	}
+
+	// Update worst week
+	const worstWeekElement = document.getElementById('worst-week');
+	if (worstWeekElement && summary.worstWeek) {
+		if (summary.worstWeek.year) {
+			worstWeekElement.textContent = `Week ${summary.worstWeek.week} (${summary.worstWeek.year})`;
+		} else {
+			worstWeekElement.textContent = `Week ${summary.worstWeek.week}`;
+		}
+		worstWeekElement.className = `value ${getScoreClass(summary.worstWeek.percentage)}`;
+	}
+
+	console.log('Summary cards updated in DOM');
+}
+
+// Helper function to get score class based on percentage
 function getScoreClass(percentage) {
+
     if (percentage >= 105) return 'exceptional';
     if (percentage >= 100) return 'perfect';
     if (percentage >= 95) return 'excellent';
@@ -315,7 +563,9 @@ function getScoreClass(percentage) {
     return 'geen-aanwezigheid';
 }
 
+// Helper function to get status text based on percentage
 function getStatusText(percentage) {
+
     if (percentage >= 105) return 'Uitmuntend';
     if (percentage >= 100) return 'Perfect';
     if (percentage >= 95) return 'Excellent';
@@ -360,7 +610,11 @@ function showLoadingState(show) {
     } else if (!show && existingLoader) {
         existingLoader.remove();
     }
-}
+
+
+// Add DOMContentLoaded event listener to initialize everything
+document.addEventListener('DOMContentLoaded', function () {
+	console.log('DOM loaded, initializing student overview');
 
 
 function drawLineChart(startWeek, endWeek) {
@@ -485,11 +739,11 @@ function updateCircleChart(percentage) {
     const startTime = performance.now();
     const duration = 1500;
 
-    function animateCircle(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const easeOut = 1 - Math.pow(1 - progress, 3);
-        const animatedDegree = currentDegree + (degree - currentDegree) * easeOut;
+
+	// Convert to numbers
+	startWeek = parseInt(startWeek, 10);
+	endWeek = parseInt(endWeek, 10);
+
 
         if (percentage >= 100) {
             circle.style.background = `conic-gradient(${color} 0deg 360deg)`;
@@ -506,8 +760,15 @@ function updateCircleChart(percentage) {
         if (progress < 1) requestAnimationFrame(animateCircle);
     }
 
-    requestAnimationFrame(animateCircle);
-    animateNumber(percentageText, currentPercentage, percentage, 1500);
+	console.log(`Filtering weeks from ${startWeek} to ${endWeek}`);
+
+	// Filter weeks by range
+	const filteredWeeks = currentStudentData.weeklyData.filter(week => {
+		return week.week_number >= startWeek && week.week_number <= endWeek;
+	});
+
+	// Update the grid with filtered weeks
+	updateWeeksGrid(filteredWeeks);
 }
 
 
@@ -635,3 +896,4 @@ window.loadStudentData = loadStudentData;
 window.refreshStudentData = () => loadStudentData();
 
 console.log('Student Overview System Ready - Production Ready!');
+

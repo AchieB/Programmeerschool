@@ -707,6 +707,8 @@ body::before {
     }
 }
 
+/* Animation classes */
+
 .fade-in {
     opacity: 0;
     transform: translateY(30px);

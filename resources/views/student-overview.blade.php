@@ -2,19 +2,22 @@
 <html lang="nl">
 
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student overzicht</title>
     <link href="{{ asset('css/student-overview.css') }}" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 </head>
 
 <body>
-    <div class="container">
-        <div class="browser-header">
-            <div class="browser-title">Student overzicht</div>
-            <div class="browser-profile"></div>
-        </div>
+	<div class="container">
+		<div class="browser-header">
+			<h1 class="browser-title">Student overzicht</h1>
+			<div class="browser-profile"></div>
+		</div>
+
 
         <div class="student-info">
             <div class="student-field">Student Naam: Laden...</div>
@@ -105,6 +108,7 @@
 
     <script src="{{ asset('js/student-overview.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 
 </body>
 
