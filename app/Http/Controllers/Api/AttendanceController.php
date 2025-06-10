@@ -130,4 +130,46 @@ class AttendanceController extends Controller
             ]
         ]);
     }
+    
+    public function getWeeklyProgress(Request $request)
+    {
+        $year = $request->input('jaar', date('Y'));
+        $studentId = $request->input('student_id');
+        
+        // Log request parameters for debugging
+        \Log::debug('Weekly progress request', [
+            'year' => $year,
+            'studentId' => $studentId
+        ]);
+        
+        // Your data fetching logic here
+        // ...
+        
+        // For testing, return dummy data
+        $weekData = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $percentage = rand(60, 100);
+            $weekData[] = [
+                'week' => $i,
+                'week_percentage' => $percentage,
+                'week_aanwezigheid' => $percentage * 2,
+                'week_rooster' => 200
+            ];
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'student' => [
+                    'naam' => 'Demo Student',
+                    'studentnummer' => $studentId ?? 'st112161364',
+                    'klas' => '4A'
+                ],
+                'eindstatistieken' => [
+                    'eindpercentage' => 85
+                ],
+                'wekelijkse_voortgang' => $weekData
+            ]
+        ]);
+    }
 }

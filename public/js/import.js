@@ -1,4 +1,3 @@
-
 let selectedFile = null;
 
 
@@ -155,87 +154,88 @@ function getFileExtension(filename) {
 }
 
 
-    if (!selectedFile) {
-        showStatus('Selecteer eerst een bestand.', 'error');
-        return;
-    }
+async function handleUpload() {
+	if (!selectedFile) {
+		showStatus('Selecteer eerst een bestand.', 'error');
+		return;
+	}
 
-    try {
-        console.log('Starting upload for:', selectedFile.name);
-        console.log('Upload URL:', uploadUrl);
+	try {
+		console.log('Starting upload for:', selectedFile.name);
+		console.log('Upload URL:', uploadUrl);
 
-        console.log('File being uploaded:', {
-            name: selectedFile.name,
-            type: selectedFile.type,
-            size: selectedFile.size,
-            lastModified: new Date(selectedFile.lastModified)
-        });
+		console.log('File being uploaded:', {
+			name: selectedFile.name,
+			type: selectedFile.type,
+			size: selectedFile.size,
+			lastModified: new Date(selectedFile.lastModified)
+		});
 
-        showUploadProgress(true);
-        setUploadProgress(0);
-        showStatus('Bestand wordt geüpload...', 'success');
+		showUploadProgress(true);
+		setUploadProgress(0);
+		showStatus('Bestand wordt geüpload...', 'success');
 
-        const uploadBtn = document.getElementById('uploadBtn');
-        uploadBtn.disabled = true;
-        uploadBtn.textContent = 'Uploading...';
+		const uploadBtn = document.getElementById('uploadBtn');
+		uploadBtn.disabled = true;
+		uploadBtn.textContent = 'Uploading...';
 
-        const formData = new FormData();
-        formData.append('aar_file', selectedFile);
-        formData.append('_token', getCSRFToken());
+		const formData = new FormData();
+		formData.append('aar_file', selectedFile);
+		formData.append('_token', getCSRFToken());
 
-        const aarInfo = parseAARFilename(selectedFile.name);
-        if (aarInfo.valid) {
-            formData.append('detected_year', aarInfo.year);
-            formData.append('detected_week', aarInfo.week);
-            formData.append('detected_code', aarInfo.code);
-        }
+		const aarInfo = parseAARFilename(selectedFile.name);
+		if (aarInfo.valid) {
+			formData.append('detected_year', aarInfo.year);
+			formData.append('detected_week', aarInfo.week);
+			formData.append('detected_code', aarInfo.code);
+		}
 
-        simulateProgress();
+		simulateProgress();
 
-        const response = await fetch(uploadUrl, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
+		const response = await fetch(uploadUrl, {
+			method: 'POST',
+			body: formData,
+			headers: {
+				'X-Requested-With': 'XMLHttpRequest'
+			}
+		});
 
-        const result = await response.json();
-        console.log('Upload result:', result);
+		const result = await response.json();
+		console.log('Upload result:', result);
 
-        if (response.ok && result.success) {
-            const message = result.message || `Bestand "${selectedFile.name}" is succesvol geïmporteerd`;
-            const recordCount = result.records_imported || 0;
+		if (response.ok && result.success) {
+			const message = result.message || `Bestand "${selectedFile.name}" is succesvol geïmporteerd`;
+			const recordCount = result.records_imported || 0;
 
-            showStatus(`${message} (${recordCount} records geïmporteerd)`, 'success');
-            addToHistory(selectedFile.name, 'Succesvol', recordCount);
-            clearFileSelection();
+			showStatus(`${message} (${recordCount} records geïmporteerd)`, 'success');
+			addToHistory(selectedFile.name, 'Succesvol', recordCount);
+			clearFileSelection();
 
-            setTimeout(loadImportHistory, 1000);
-        } else {
-            const errorMessage = result.message || result.error || 'Er is een fout opgetreden tijdens het uploaden.';
-            showStatus(`Upload gefaald: ${errorMessage}`, 'error');
-            addToHistory(selectedFile.name, 'Gefaald', 0, errorMessage);
-        }
+			setTimeout(loadImportHistory, 1000);
+		} else {
+			const errorMessage = result.message || result.error || 'Er is een fout opgetreden tijdens het uploaden.';
+			showStatus(`Upload gefaald: ${errorMessage}`, 'error');
+			addToHistory(selectedFile.name, 'Gefaald', 0, errorMessage);
+		}
 
-    } catch (error) {
-        console.error('Upload error:', error);
+	} catch (error) {
+		console.error('Upload error:', error);
 
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            showStatus('Kan geen verbinding maken met server. Backend nog niet gereed?', 'error');
-        } else {
-            showStatus(`Upload gefaald: ${error.message}`, 'error');
-        }
+		if (error.name === 'TypeError' && error.message.includes('fetch')) {
+			showStatus('Kan geen verbinding maken met server. Backend nog niet gereed?', 'error');
+		} else {
+			showStatus(`Upload gefaald: ${error.message}`, 'error');
+		}
 
-        addToHistory(selectedFile.name, 'Gefaald', 0, error.message);
-    } finally {
-        showUploadProgress(false);
-        setUploadProgress(0);
+		addToHistory(selectedFile.name, 'Gefaald', 0, error.message);
+	} finally {
+		showUploadProgress(false);
+		setUploadProgress(0);
 
-        const uploadBtn = document.getElementById('uploadBtn');
-        uploadBtn.textContent = 'Upload Bestand';
-        uploadBtn.disabled = selectedFile === null;
-    }
+		const uploadBtn = document.getElementById('uploadBtn');
+		uploadBtn.textContent = 'Upload Bestand';
+		uploadBtn.disabled = selectedFile === null;
+	}
 
 }
 
@@ -333,27 +333,27 @@ function addToHistory(filename, status, recordsImported = 0, errorMessage = '') 
 
 async function loadImportHistory() {
 
-    try {
-        const response = await fetch(window.historyUrl);
+	try {
+		const response = await fetch(window.historyUrl);
 
-        if (!response.ok) {
-            throw new Error('Failed to load import history');
-        }
+		if (!response.ok) {
+			throw new Error('Failed to load import history');
+		}
 
-        const history = await response.json();
-        updateHistoryTable(history);
-    } catch (error) {
-        console.error('Error loading import history:', error);
-    }
+		const history = await response.json();
+		updateHistoryTable(history);
+	} catch (error) {
+		console.error('Error loading import history:', error);
+	}
 }
 
 function updateHistoryTable(history) {
-    const tableBody = document.getElementById('historyTableBody');
+	const tableBody = document.getElementById('historyTableBody');
 
-    if (!tableBody) {
-        console.error('History table body not found');
-        return;
-    }
+	if (!tableBody) {
+		console.error('History table body not found');
+		return;
+	}
 
 
 	if (history.length === 0) {
@@ -450,6 +450,23 @@ function demonstrateUpload() {
 
 document.addEventListener('DOMContentLoaded', function () {
 	console.log('Import page initializing...');
+
+	// Attach event listeners
+	const fileInput = document.getElementById('fileInput');
+	if (fileInput) {
+		console.log('File input found, attaching handleFileSelect');
+		fileInput.addEventListener('change', handleFileSelect);
+	} else {
+		console.error('File input element not found!');
+	}
+
+	const uploadBtn = document.getElementById('uploadBtn');
+	if (uploadBtn) {
+		console.log('Upload button found, attaching handleUpload');
+		uploadBtn.addEventListener('click', handleUpload);
+	} else {
+		console.error('Upload button not found!');
+	}
 
 	// Setup drag & drop
 	setupDragAndDrop();

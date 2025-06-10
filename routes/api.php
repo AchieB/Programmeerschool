@@ -28,6 +28,7 @@ Route::middleware('api')->group(function () {
 	Route::prefix('attendance')->group(function () {
 		Route::get('/', [AttendanceController::class, 'index']);
 		Route::get('/statistics', [AttendanceController::class, 'statistics']);
+		Route::get('/weekly-progress', [AttendanceController::class, 'getWeeklyProgress']);
 	});
 
 	// Report endpoints 
@@ -35,5 +36,16 @@ Route::middleware('api')->group(function () {
 		Route::get('/students-by-percentage', [ReportController::class, 'studentsPercentageFilter']);
 		Route::get('/weekly-comparison', [ReportController::class, 'weeklyComparison']);
 	});
+});
+
+// Student data routes
+Route::get('/students/{studentnummer?}', [StudentController::class, 'getStudent']);
+
+// Debug route
+Route::get('/debug-api', function() {
+    return response()->json([
+        'message' => 'API is working',
+        'routes' => Route::getRoutes()->getRoutesByMethod()['GET']
+    ]);
 });
 

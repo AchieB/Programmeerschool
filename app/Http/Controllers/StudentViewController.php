@@ -14,13 +14,14 @@ class StudentViewController extends Controller
             $student = Student::where('studentnummer', $studentnummer)->first();
         }
         
-        // Pass API endpoints to the view - FULL URLs
+        // Correcte API endpoints
         $apiEndpoints = [
             'studentData' => url('/api/students/' . ($studentnummer ?? '')),
-            'weeklyData' => url('/api/students/' . ($studentnummer ?? '') . '/weekly-progress')
+            // Gebruik de bestaande route
+            'weeklyData' => $studentnummer 
+                ? url('/api/students/' . $studentnummer . '/weekly-progress') 
+                : url('/api/attendance/weekly-progress')
         ];
-        
-        \Log::debug('API endpoints', $apiEndpoints);
         
         return view('student-overview', [
             'student' => $student,

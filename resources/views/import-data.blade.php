@@ -59,7 +59,7 @@
 					</div>
 
 					<!-- HIDDEN FILE INPUT -->
-					<input type="file" id="fileInput" accept=".xlsx,.xls,.ods" onchange="handleFileSelect(event)">
+					<input type="file" id="fileInput">
 				</div>
 			</div>
 
